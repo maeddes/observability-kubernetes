@@ -7,10 +7,12 @@ helm repo update
 helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack
 ```
 
-```
-kubectl port-forward svc/prometheus-grafana 8080:80
-```
+```bash
 
+envsubst < kube_prometheus_ingress.yaml | kubectl apply -f -
+kubectl get ing -A
+
+```
 admin:prom-operator
 
-http://localhost:8080/dashboards
+

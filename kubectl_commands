@@ -1,0 +1,97 @@
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add stable https://charts.helm.sh/stable
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack -n kube-prometheus-stack --create-namespace
+
+export INGRESS_IP=$(kubectl get service --namespace ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+echo $INGRESS_IP
+export INGRESS_DOMAIN=${INGRESS_IP}.nip.io
+echo $INGRESS_DOMAIN
+
+cat <<EOF | kubectl apply -f -
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: grafana
+  namespace: kube-prometheus-stack
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: grafana.${INGRESS_DOMAIN}
+      http:
+        paths:
+          - path: /
+            backend:
+              service:
+                name: prometheus-grafana
+                port:
+                  number: 80
+            pathType: ImplementationSpecific
+---
+EOF
+
+cat <<EOF | kubectl apply -f -
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: prometheus
+  namespace: kube-prometheus-stack
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: prometheus.${INGRESS_DOMAIN}
+      http:
+        paths:
+          - path: /
+            backend:
+              service:
+                name: prometheus-kube-prometheus-prometheus
+                port:
+                  number: 9090
+            pathType: ImplementationSpecific
+---
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otel
+  namespace: otel
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: otel.${INGRESS_DOMAIN}
+      http:
+        paths:
+          - pathType: ImplementationSpecific
+            backend:
+              service:
+                name: oteldemo-frontendproxy
+                port:
+                  number: 8080
+            path: /
+---
+EOF
+
+kubectl get secret prometheus-grafana -n kube-prometheus-stack -o jsonpath="{.data.admin-user}" | base64 --decode; echo
+kubectl get secret prometheus-grafana -n kube-prometheus-stack -o jsonpath="{.data.admin-password}" | base64 --decode; echo
+
+curl --silent \
+    --data-urlencode "query=container_cpu_usage_seconds_total{namespace='otel',container='frontendproxy'}" \
+    --data-urlencode "start=$(date --utc +%Y-%m-%dT%H:%M:%S.%N --date '5 minutes ago')Z" \
+    --data-urlencode "end=$(date --utc +%Y-%m-%dT%H:%M:%S.%N)Z" \
+    --data-urlencode 'step=1m' \
+    http://prometheus.20.76.186.234.nip.io/api/v1/query_range \
+        | jq '.data.result[].values'
+
+
+    resources:
+      limits:
+        memory: 200Mi
+      requests:
+        memory: 200Mi
+
+        resources:
+          limits:
+            memory: 200Mi

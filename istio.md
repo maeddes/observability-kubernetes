@@ -95,6 +95,12 @@ kubectl label namespace otel istio-injection=enabled --overwrite
 kubectl get pod -n otel -o yaml  | kubectl delete -f -
 ```
 
+Removal
+```
+kubectl label namespace otel istio-injection=disabled --overwrite
+kubectl get pod -n otel -o yaml  | kubectl delete -f -
+```
+
 # Prometheus and Grafana
 
 

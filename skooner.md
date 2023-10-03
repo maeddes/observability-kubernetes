@@ -14,3 +14,4 @@ kubectl get secrets
 
 # Show the contents of the secret to extract the token
 kubectl describe secret skooner-sa-token-xxxxx
+kubectl create token skooner-sa -n kube-system

@@ -2,9 +2,11 @@
 
 ```bash
 
-curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.17.1 sh -
-istio-1.17.1/bin/istioctl install --set profile=default -y 
-kubectl apply -f istio-1.17.1/samples/addons
+curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.19.0 sh -
+istio-1.19.0/bin/istioctl install --set profile=default -y 
+ln -s istio-1.19.0/bin/istioctl istioctl
+
+kubectl apply -f istio-${ISTIO_VERSION}/samples/addons
 
 ```
 
@@ -16,7 +18,11 @@ show k9s live deployment or do
 
 kubectl get all -n istio-system
 
-kubectl get service --namespace istio-system istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+```
+
+Get ingress domain
+
+```bash
 
 INGRESS_IP_ISTIO=$(kubectl get service --namespace istio-system istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[].ip}'); echo Istio Ingress: $INGRESS_IP_ISTIO
 
@@ -37,10 +43,10 @@ kubectl get gateway,virtualservice,destinationrule -A
 
 # Configure injection of single pod
 
-```
+```bash
 kubectl get deployments todoui -n todoapp -o yaml 
 kubectl get deployments todoui -n todoapp -o yaml | istioctl kube-inject -f - 
-kubectl get deployments todoui -n todoapp -o yaml | istioctl kube-inject -f - | kubectl apply -f -
+kubectl get deployments todoui -n todoapp -o yaml | istioctl kube-inject -f - | kubectl apply -f - 
 
 kubectl get pod -n todoapp -w
 ```
@@ -50,14 +56,14 @@ kubectl get pod -n todoapp -w
 
 # Configure injection of all pods
 
-```
+```bash
 kubectl get deployments -n todoapp -o yaml | istioctl kube-inject -f - | kubectl apply -f -
 ```
 
 # Generate load (via URL :-))
 
-```
-export INGRESS_IP=$(kubectl get service --namespace ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+```bash
+export INGRESS_IP=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[].ip}')
 echo $INGRESS_IP
 export INGRESS_DOMAIN=todoui.${INGRESS_IP}.nip.io; echo $INGRESS_DOMAIN
 
@@ -84,13 +90,13 @@ for i in postgresdb todobackend todoui; do kubectl label -n todoapp service $i a
 # Instrument an entire namespace
 
 Petclinic
-```
+```bash
 kubectl label namespace spring-petclinic istio-injection=enabled --overwrite
 kubectl get pod -n spring-petclinic -o yaml  | kubectl delete -f -
 ```
 
 Otel
-```
+```bash
 kubectl label namespace otel istio-injection=enabled --overwrite
 kubectl get pod -n otel -o yaml  | kubectl delete -f -
 ```

@@ -1,19 +1,18 @@
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: headlamp
+  name: skooner
   namespace: kube-system
 spec:
   ingressClassName: nginx
   rules:
-    - host: headlamp.${INGRESS_DOMAIN}
+    - host: skooner.${INGRESS_DOMAIN}
       http:
         paths:
           - path: /
             backend:
               service:
-                name: headlamp
+                name: skooner
                 port:
                   number: 80
             pathType: ImplementationSpecific
-

@@ -6,8 +6,10 @@ kubectl apply -f https://raw.githubusercontent.com/kinvolk/headlamp/main/kuberne
 
 # Usage
 
+```
 kubectl -n kube-system create serviceaccount headlamp-admin
 kubectl create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin
+```
 
 # Show the contents of the secret to extract the token
 kubectl create token headlamp-admin -n kube-system
